@@ -23,13 +23,13 @@ class Plants(Resource):
         return make_response(jsonify(plants), 200)
 
     def post(self):
-
         data = request.get_json()
 
         new_plant = Plant(
             name=data['name'],
             image=data['image'],
             price=data['price'],
+            is_in_stock=data['is_in_stock']
         )
 
         db.session.add(new_plant)
@@ -42,11 +42,32 @@ api.add_resource(Plants, '/plants')
 class PlantByID(Resource):
 
     def get(self, id):
-        plant = Plant.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(plant), 200)
+        plant = Plant.query.get(id)
+        if plant:
+            return make_response(plant.to_dict(), 200)
+        else:
+            return make_response("Plant not found", 404)
+
+    def patch(self, id):
+        plant = Plant.query.get(id)
+        if plant:
+            data = request.get_json()
+            plant.is_in_stock = data['is_in_stock']
+            db.session.commit()
+            return make_response(plant.to_dict(), 200)
+        else:
+            return make_response("Plant not found", 404)
+
+    def delete(self, id):
+        plant = Plant.query.get(id)
+        if plant:
+            db.session.delete(plant)
+            db.session.commit()
+            return make_response('', 204)
+        else:
+            return make_response("Plant not found", 404)
 
 api.add_resource(PlantByID, '/plants/<int:id>')
-        
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
